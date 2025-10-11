@@ -46,8 +46,8 @@ TIME = "16:00"
 
 # Optional data
 EMAILS = ["22110190008@m.fudan.edu.cn"]  # Receive error notifications by email
-YOUR_EMAIL = "yanyanchen235@gmail.com"  # Account to send email from
-EMAIL_PASSWORD = "Ayst110449/"  # Password for the email account
+YOUR_EMAIL = "18307110449@fudan.edu.cn"  # Account to send email from
+EMAIL_PASSWORD = "lSshPcaF"  # Password for the email account
 
 
 if __name__ == '__main__':
