@@ -6,10 +6,11 @@ import datetime
 SERVICE_CATEGORY = "2c9c486e4f821a19014f82381feb0001"  # This is the category ID for "Sports Reservation". It usually doesn't change.
 
 # Fill in these data
-USER_ID = "22110190008"
-USER_PASSWORD = "Ayst15057223777/"
-USER_NAME = os.environ.get(陈艳艳')
-USER_PHONE = os.environ.get('18817733769')
+USER_ID = os.environ.get('USER_ID')
+USER_PASSWORD = os.environ.get('USER_PASSWORD')
+USER_NAME = os.environ.get('USER_NAME')
+USER_PHONE = os.environ.get('USER_PHONE')
+
 CAMPUS_NAME = "江湾校区"
 SPORT_NAME = "羽毛球"
 SPORT_LOCATION = "江湾体育馆羽毛球场"
@@ -48,8 +49,8 @@ TIME = "16:00"
 
 # Optional data
 EMAILS = ["22110190008@m.fudan.edu.cn"]  # Receive error notifications by email
-YOUR_EMAIL = "18307110449@fudan.edu.cn"  # Account to send email from
-EMAIL_PASSWORD = "lSshPcaF"  # Password for the email account
+YOUR_EMAIL = os.environ.get('YOUR_EMAIL')  # Account to send email from
+EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')  # Password for the email account
 
 
 if __name__ == '__main__':
