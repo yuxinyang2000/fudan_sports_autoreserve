@@ -8,6 +8,8 @@ SERVICE_CATEGORY = "2c9c486e4f821a19014f82381feb0001"  # This is the category ID
 # Fill in these data
 USER_ID = "22110190008"
 USER_PASSWORD = "Ayst15057223777/"
+USER_NAME = os.environ.get(陈艳艳')
+USER_PHONE = os.environ.get('18817733769')
 CAMPUS_NAME = "江湾校区"
 SPORT_NAME = "羽毛球"
 SPORT_LOCATION = "江湾体育馆羽毛球场"
