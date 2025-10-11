@@ -32,7 +32,7 @@ jobs:
 
       # 第3步：安装脚本运行所需要的第三方库 (requests)
       - name: Install dependencies
-        run: pip install requests beautifulsoup4 opencv-python
+        run: pip install requests beautifulsoup4 opencv-python lxml
 
       # 第4步：运行你的主脚本
       - name: Run the reservation script
