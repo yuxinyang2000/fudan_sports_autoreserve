@@ -10,12 +10,12 @@ CAMPUS_NAME = "江湾校区"
 SPORT_NAME = "羽毛球"
 SPORT_LOCATION = "江湾体育馆羽毛球场"
 DATE = "2025-10-17"
-TIME = "16:00?"
+TIME = "16:00"
 
 # Optional data
-EMAILS = ["YOUR_EMAIL"]  # Receive error notifications by email
-YOUR_EMAIL = "YOUR_EMAIL"  # Account to send email from
-EMAIL_PASSWORD = "YOUR_EMAIL_PASSWORD"  # Password for the email account
+EMAILS = ["22110190008@m.fudan.edu.cn"]  # Receive error notifications by email
+YOUR_EMAIL = "yanyanchen235@gmail.com"  # Account to send email from
+EMAIL_PASSWORD = "Ayst110449/"  # Password for the email account
 
 
 if __name__ == '__main__':
