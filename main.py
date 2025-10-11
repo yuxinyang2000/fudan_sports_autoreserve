@@ -57,7 +57,7 @@ if __name__ == '__main__':
         logged_in_session = apis.login(USER_ID, USER_PASSWORD)
         campus_id, sport_id = apis.load_sports_and_campus_id(logged_in_session, SERVICE_CATEGORY, CAMPUS_NAME, SPORT_NAME)
         service_id = apis.get_service_id(logged_in_session, SERVICE_CATEGORY, campus_id, sport_id, SPORT_LOCATION)
-        apis.reserve(logged_in_session, service_id, SERVICE_CATEGORY, DATE, TIME)
+        apis.reserve(logged_in_session, service_id, SERVICE_CATEGORY, DATE, TIME, USER_NAME, USER_PHONE)
     except Exception as e:
         if EMAILS:
             import smtplib
