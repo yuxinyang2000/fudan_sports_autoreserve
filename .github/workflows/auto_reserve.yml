@@ -1,0 +1,39 @@
+# 工作流的名称，显示在 Actions 页面
+name: FDU Sports Auto-Reservation
+
+# 触发工作流的条件
+on:
+  # 允许你手动在 Actions 页面点击 "Run workflow" 按钮来运行，方便测试
+  workflow_dispatch:
+
+  # 定时任务触发器
+  schedule:
+    # 这是最关键的部分：定时运行的时间
+    # 下面的 cron 语法表示在每天的 UTC 时间 0点5分 运行
+    # 请务必根据你自己的需求修改这个时间！
+    - cron: '1 16 * * *'
+
+# 定义具体要执行的任务
+jobs:
+  build-and-run:
+    # 使用 GitHub 提供的最新版 Ubuntu 服务器来运行
+    runs-on: ubuntu-latest
+
+    steps:
+      # 第1步：将你的仓库代码下载到这台临时服务器上
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 第2步：设置 Python 3.10 环境
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # 第3步：安装脚本运行所需要的第三方库 (requests)
+      - name: Install dependencies
+        run: pip install requests
+
+      # 第4步：运行你的主脚本
+      - name: Run the reservation script
+        run: python main.py
