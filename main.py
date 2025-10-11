@@ -12,9 +12,11 @@ CAMPUS_NAME = "江湾校区"
 SPORT_NAME = "羽毛球"
 SPORT_LOCATION = "江湾体育馆羽毛球场"
 
-# --- 智能检测未来三天内的周五 ---
+# --- 智能检测未来三天内的周二或周五 ---
 # 预约平台开放的天数窗口，你可以根据实际情况修改这个数字
 BOOKING_WINDOW = 3
+# 你想要预约的星期，周一=0, 周二=1, ..., 周日=6
+TARGET_DAYS = [1, 4]  # 1 代表周二, 4 代表周五
 
 today = datetime.date.today()
 target_date_found = None
@@ -23,20 +25,20 @@ target_date_found = None
 for i in range(BOOKING_WINDOW + 1):
     potential_date = today + datetime.timedelta(days=i)
     
-    # 检查这一天是不是周五 (周一=0, 周二=1, ..., 周五=4)
-    if potential_date.weekday() == 4:
+    # 检查这一天是不是你想要的目标日期 (周二或周五)
+    if potential_date.weekday() in TARGET_DAYS:
         target_date_found = potential_date
-        # 找到了第一个符合条件的周五，就把它定为目标，并停止搜索
+        # 找到了第一个符合条件的日期，就把它定为目标，并停止搜索
         break
 
-# 判断是否找到了可以预约的周五
+# 判断是否找到了可以预约的日期
 if target_date_found:
     # 如果找到了，就设置 DATE 变量，并打印日志
     DATE = target_date_found.strftime("%Y-%m-%d")
-    print(f"[VITAL]\t\t🎯 Found a Friday in booking window. Target: {DATE}")
+    print(f"[VITAL]\t\t🎯 Found a target day in booking window. Target: {DATE}")
 else:
     # 如果没找到，说明还没到预约时间，打印日志并退出脚本
-    print(f"[INFO]\t\tNo Friday found within the next {BOOKING_WINDOW} days. Nothing to do today.")
+    print(f"[INFO]\t\tNo target day (Tuesday or Friday) found within the next {BOOKING_WINDOW} days. Nothing to do today.")
     sys.exit()
 # --- 智能检测代码结束 ---
 
