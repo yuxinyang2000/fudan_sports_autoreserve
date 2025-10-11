@@ -122,7 +122,7 @@ def get_service_id(s: requests.Session, service_cat_id, campus_id, sport_id, tar
     return service_id
 
 
-def reserve(s: requests.Session, service_id, service_cat_id, target_date, target_time):
+def reserve(s: requests.Session, service_id, service_cat_id, target_date, target_time, USER_NAME, USER_PHONE):
     """
     :param s: requests.Session() that contains the login information, or user token in Str format
     :param service_id: String of service ID (e.g. badminton: 2c9c486e4f821a19014f82418a900004)
@@ -149,22 +149,27 @@ def reserve(s: requests.Session, service_id, service_cat_id, target_date, target
                 logs.log_console(
                     f"Begin Reserving Target: {reservable_option['openDate']} {reservable_option['serviceTime']['beginTime']}, Target ID: {reservable_option['id']}, Target ServiceTime ID: {reservable_option['serviceTime']['id']}",
                     "VITAL")
+                
+                # 直接使用从 main.py 传入的姓名和电话
+                user_name = USER_NAME
+                user_phone = USER_PHONE
+                logs.log_console("Name: " + user_name + " Phone: " + user_phone, "INFO")
 
-                try:
-                    logs.log_console("Begin Loading Order Form", "INFO")
-                    response = s.get(order_form_url,
-                                     params={"resourceIds": reservable_option['id'], "serviceContent.id": service_id,
-                                             "serviceCategory.id": service_cat_id, "orderCounts": 1})
-                    logs.log_console(f"Order Form Request: {response.request.url} {response.request.headers}", "DEBUG")
-                    logs.log_console(f"Order Form: {response.text}", "DEBUG")
-                    info_form = json.loads(response.text)['object']['userInfo']
-                    user_name = info_form['personName']
-                    user_phone = info_form['phone']
-                    logs.log_console("Name: " + user_name + " Phone: " + user_phone, "INFO")
-                except KeyError:
-                    logs.log_console("Invalid order form, falling back to manual input", "WARNING")
-                    user_name = input("Enter your name: ")
-                    user_phone = input("Enter your phone: ")
+                # try:
+                #     logs.log_console("Begin Loading Order Form", "INFO")
+                #     response = s.get(order_form_url,
+                #                      params={"resourceIds": reservable_option['id'], "serviceContent.id": service_id,
+                #                              "serviceCategory.id": service_cat_id, "orderCounts": 1})
+                #     logs.log_console(f"Order Form Request: {response.request.url} {response.request.headers}", "DEBUG")
+                #     logs.log_console(f"Order Form: {response.text}", "DEBUG")
+                #     info_form = json.loads(response.text)['object']['userInfo']
+                #     user_name = info_form['personName']
+                #     user_phone = info_form['phone']
+                #     logs.log_console("Name: " + user_name + " Phone: " + user_phone, "INFO")
+                # except KeyError:
+                #     logs.log_console("Invalid order form, falling back to manual input", "WARNING")
+                #     user_name = input("Enter your name: ")
+                #     user_phone = input("Enter your phone: ")
 
                 logs.log_console("Begin Fetch Captcha", "INFO")
                 move_X = get_and_recognize_captcha(s, captcha_url)
