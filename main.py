@@ -22,7 +22,13 @@ BOOKING_WINDOW = 2
 # 你想要预约的星期，周一=0, 周二=1, ..., 周日=6
 TARGET_DAYS = [1, 4]  # 1 代表周二, 4 代表周五
 
-today = datetime.date.today()
+# --- 将服务器的 UTC 时间转换为北京时间来计算日期 ---
+# 获取当前的 UTC 时间，并加上8小时得到北京时间
+beijing_time = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+# 使用北京时间的日期部分作为我们的“今天”
+today = beijing_time.date()
+# --- 时区转换代码结束 ---
+
 target_date_found = None
 
 # 从今天开始，循环检查未来几天的日期
