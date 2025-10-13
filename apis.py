@@ -28,14 +28,14 @@ reserve_url = "https://elife.fudan.edu.cn/app/api/order/saveOrder.action?op=orde
 captcha_url = "https://elife.fudan.edu.cn/public/front/getImgSwipe.htm?_="
 # -------------------------
 
-# --- 全新重写的、基于 Selenium 的 login 函数 ---
+# --- 全新重写的、基于 Selenium 的 login 函数 (最终版) ---
 def login(username, password):
     logs.log_console("Step 1: Setting up Selenium WebDriver...", "INFO")
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1920,1080") # 模拟一个标准的桌面浏览器尺寸
+    options.add_argument("--window-size=1920,1080")
     driver = webdriver.Chrome(options=options)
     
     s = requests.Session()
@@ -45,27 +45,29 @@ def login(username, password):
         logs.log_console("Step 2: Navigating to the app URL...", "INFO")
         driver.get(app_url)
         
-        # 增强的等待逻辑:
-        # 1. 首先, 确认已成功跳转到包含 "uis.fudan.edu.cn" 的登录页面
-        wait = WebDriverWait(driver, 25) # 增加总等待时间到25秒
+        # 精确等待逻辑:
+        wait = WebDriverWait(driver, 25)
         logs.log_console("Waiting for redirect to the login page...", "DEBUG")
         wait.until(EC.url_contains("uis.fudan.edu.cn"))
         
-        # 2. 然后, 等待用户名输入框变为可见且可交互状态
-        logs.log_console("Login page reached. Waiting for username input to be ready...", "DEBUG")
-        user_input = wait.until(EC.element_to_be_clickable((By.ID, "username")))
-        pass_input = driver.find_element(By.ID, "password")
+        # 使用精确的 CSS 选择器来定位输入框 (基于 HTML 证据)
+        logs.log_console("Login page reached. Waiting for login form elements...", "DEBUG")
+        user_input_selector = "input[placeholder='username']"
+        pass_input_selector = "input[type='password']"
+        
+        user_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, user_input_selector)))
+        pass_input = driver.find_element(By.CSS_SELECTOR, pass_input_selector)
         
         logs.log_console("Step 3: Entering credentials...", "INFO")
         user_input.send_keys(username)
         pass_input.send_keys(password)
         
-        # 点击登录按钮
-        login_button = driver.find_element(By.NAME, "submit")
+        # 使用精确的 XPath 来定位登录按钮 (基于 HTML 证据)
+        login_button_xpath = "//button/span[contains(text(), 'Sign in')]"
+        login_button = wait.until(EC.element_to_be_clickable((By.XPATH, login_button_xpath)))
         login_button.click()
 
-        # 增强的登录成功判断:
-        # 等待 URL 重新包含 /app/ , 表明已跳转回体育预约系统
+        # 等待成功返回体育预约系统
         logs.log_console("Step 4: Waiting for successful login redirect back to the app...", "INFO")
         wait.until(EC.url_contains("/app/"))
         
@@ -82,8 +84,6 @@ def login(username, password):
 
     except Exception as e:
         logs.log_console(f"A critical error occurred during Selenium login: {e}", "ERROR")
-        # 增强的错误诊断:
-        # 在 Actions 的 Artifacts 中, 你将能找到这两个文件
         screenshot_path = "error_screenshot.png"
         html_path = "error_page_source.html"
         driver.save_screenshot(screenshot_path)
@@ -95,7 +95,7 @@ def login(username, password):
     finally:
         driver.quit()
 
-# --- 以下函数保持不变, 仅为所有网络请求添加 timeout ---
+# --- 以下函数保持不变 ---
 # (从 load_sports_and_campus_id 开始的所有函数都保持原样)
 def load_sports_and_campus_id(s: requests.Session, service_category_id, target_campus, target_sport):
     logs.log_console("Begin Fetching Sports and Campus ID", "INFO")
