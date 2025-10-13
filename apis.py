@@ -44,6 +44,13 @@ def login(username, password):
         
         soup = BeautifulSoup(initial_response.text, "lxml")
         
+        # --- 新增的调试步骤 ---
+        # 打印脚本看到的完整HTML, 以便我们找到正确的标签
+        logs.log_console("--- BEGIN LOGIN PAGE HTML ---", "DEBUG")
+        logs.log_console(initial_response.text, "DEBUG")
+        logs.log_console("--- END LOGIN PAGE HTML ---", "DEBUG")
+        # ------------------------
+
         # 注意: 以下选择器是根据标准CAS登录页面的最佳猜测。
         # 如果登录失败, 最可能的原因是这些隐藏值的HTML标签或ID发生了变化。
         lok_value = soup.find('input', {'name': 'lok'}).get('value')
@@ -210,3 +217,4 @@ def image_convert(image):
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     edge = cv2.Canny(img, 100, 200)
     return edge
+
