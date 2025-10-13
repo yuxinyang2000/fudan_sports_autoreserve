@@ -1,42 +1,33 @@
-# 工作流名称
 name: FDU Sports Auto-Reservation
 
-# 触发条件：定时触发 和 手动触发
 on:
   workflow_dispatch:
   schedule:
-    # 北京时间次日凌晨 00:01 (UTC 时间 16:01)
-    # 请根据您的实际需求修改
     - cron: '1 16 * * *'
 
-# 任务详情
 jobs:
   build-and-run:
-    # 使用 GitHub 提供的最新版 Ubuntu 服务器来运行
     runs-on: ubuntu-latest
 
     steps:
-      # 第1步：检出（下载）你的代码
-      # 使用最新的 v4 版本
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 第2步：设置 Python 3.10 环境
-      # 使用最新的 v5 版本
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      # 第3步：安装依赖 (从 requirements.txt 文件)
-      # 这是一个更规范的管理方式
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # 第4步：运行主脚本
+      # 我们将给这一步加上一个ID, 方便后续引用
       - name: Run the reservation script
+        id: run_script # <--- 新增ID
         env:
-          # 将您在 GitHub Secrets 中设置的所有个人信息安全地传递给脚本
           USER_ID: ${{ secrets.USER_ID }}
           USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
           USER_NAME: ${{ secrets.USER_NAME }}
@@ -44,3 +35,15 @@ jobs:
           YOUR_EMAIL: ${{ secrets.YOUR_EMAIL }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         run: python main.py
+
+      # --- 这是新增的、最关键的“上传”步骤 ---
+      - name: Upload failure artifacts
+        # 这个条件意味着: 仅在前面的 "Run the reservation script" 步骤失败时, 才执行此操作
+        if: failure() && steps.run_script.conclusion == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-logs # 上传的包裹名称
+          path: |
+            error_screenshot.png
+            error_page_source.html
+      # ------------------------------------
