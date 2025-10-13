@@ -3,3 +3,4 @@ beautifulsoup4
 opencv-python
 lxml
 pycryptodome
+selenium
