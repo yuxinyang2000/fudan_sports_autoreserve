@@ -32,9 +32,10 @@ captcha_url = "https://elife.fudan.edu.cn/public/front/getImgSwipe.htm?_="
 def login(username, password):
     logs.log_console("Step 1: Setting up Selenium WebDriver...", "INFO")
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")  # 无头模式, 在后台运行
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--window-size=1920,1080") # 模拟一个标准的桌面浏览器尺寸
     driver = webdriver.Chrome(options=options)
     
     s = requests.Session()
@@ -44,9 +45,15 @@ def login(username, password):
         logs.log_console("Step 2: Navigating to the app URL...", "INFO")
         driver.get(app_url)
         
-        # 等待页面跳转到登录页, 并等待用户名输入框出现 (最多等待20秒)
-        wait = WebDriverWait(driver, 20)
-        user_input = wait.until(EC.presence_of_element_located((By.ID, "username")))
+        # 增强的等待逻辑:
+        # 1. 首先, 确认已成功跳转到包含 "uis.fudan.edu.cn" 的登录页面
+        wait = WebDriverWait(driver, 25) # 增加总等待时间到25秒
+        logs.log_console("Waiting for redirect to the login page...", "DEBUG")
+        wait.until(EC.url_contains("uis.fudan.edu.cn"))
+        
+        # 2. 然后, 等待用户名输入框变为可见且可交互状态
+        logs.log_console("Login page reached. Waiting for username input to be ready...", "DEBUG")
+        user_input = wait.until(EC.element_to_be_clickable((By.ID, "username")))
         pass_input = driver.find_element(By.ID, "password")
         
         logs.log_console("Step 3: Entering credentials...", "INFO")
@@ -57,17 +64,16 @@ def login(username, password):
         login_button = driver.find_element(By.NAME, "submit")
         login_button.click()
 
-        # 等待登录成功并跳转回 elife 主页 (通过检查某个元素来判断)
-        logs.log_console("Step 4: Waiting for successful login redirect...", "INFO")
-        wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), '体育项目')]"))) # 假设主页有“体育项目”字样
+        # 增强的登录成功判断:
+        # 等待 URL 重新包含 /app/ , 表明已跳转回体育预约系统
+        logs.log_console("Step 4: Waiting for successful login redirect back to the app...", "INFO")
+        wait.until(EC.url_contains("/app/"))
         
         logs.log_console("Step 5: Transferring cookies from Selenium to Requests...", "INFO")
-        # 将浏览器中的 cookie 转移到我们的 requests session 中
         selenium_cookies = driver.get_cookies()
         for cookie in selenium_cookies:
             s.cookies.set(cookie['name'], cookie['value'])
 
-        # 检查关键的 cookie 是否存在
         if "MOD_AUTH_CAS" not in s.cookies and "JSESSIONID" not in s.cookies:
             raise Exception("Login failed, final token not found in cookies after Selenium process.")
 
@@ -76,10 +82,18 @@ def login(username, password):
 
     except Exception as e:
         logs.log_console(f"A critical error occurred during Selenium login: {e}", "ERROR")
-        driver.save_screenshot("error_screenshot.png") # 保存一张截图以供调试
+        # 增强的错误诊断:
+        # 在 Actions 的 Artifacts 中, 你将能找到这两个文件
+        screenshot_path = "error_screenshot.png"
+        html_path = "error_page_source.html"
+        driver.save_screenshot(screenshot_path)
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(driver.page_source)
+        logs.log_console(f"Saved screenshot to {screenshot_path}", "ERROR")
+        logs.log_console(f"Saved page HTML to {html_path}", "ERROR")
         raise
     finally:
-        driver.quit() # 确保浏览器被关闭
+        driver.quit()
 
 # --- 以下函数保持不变, 仅为所有网络请求添加 timeout ---
 # (从 load_sports_and_campus_id 开始的所有函数都保持原样)
