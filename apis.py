@@ -8,107 +8,81 @@ import base64
 import numpy as np
 from datetime import datetime
 
-# --- 新增的加密库 ---
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_v1_5
+# --- Selenium 相关库 ---
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 # --------------------
 
 # --- 通用变量 (保持不变) ---
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
     "Referer": "https://elife.fudan.edu.cn/app/",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-    "Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
 }
-get_reservables_url = "https://elife.fudan.edu.cn/app/api/toResourceFrame.action"
 app_url = "https://elife.fudan.edu.cn/app/"
+search_url = "https://elife.fudan.edu.cn/app/api/search.action"
+# ... (其他 URL 变量保持不变)
+get_reservables_url = "https://elife.fudan.edu.cn/app/api/toResourceFrame.action"
 reserve_url = "https://elife.fudan.edu.cn/app/api/order/saveOrder.action?op=order"
 captcha_url = "https://elife.fudan.edu.cn/public/front/getImgSwipe.htm?_="
-order_form_url = "https://elife.fudan.edu.cn/app/api/order/loadOrderForm_ordinary.action"
-search_url = "https://elife.fudan.edu.cn/app/api/search.action"
-max_retry = 3
 # -------------------------
 
-
-# --- 全新重写的 login 函数 ---
+# --- 全新重写的、基于 Selenium 的 login 函数 ---
 def login(username, password):
+    logs.log_console("Step 1: Setting up Selenium WebDriver...", "INFO")
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")  # 无头模式, 在后台运行
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    driver = webdriver.Chrome(options=options)
+    
     s = requests.Session()
     s.headers.update(headers)
-    
+
     try:
-        # 第1步: 访问应用主页, 获取正确的登录重定向URL和初始令牌
-        logs.log_console("Step 1: Visiting app to get login redirect...", "DEBUG")
-        initial_response = s.get(app_url, timeout=15)
-        login_page_url = initial_response.url
-        logs.log_console(f"Redirected to login page: {login_page_url}", "DEBUG")
+        logs.log_console("Step 2: Navigating to the app URL...", "INFO")
+        driver.get(app_url)
         
-        soup = BeautifulSoup(initial_response.text, "lxml")
+        # 等待页面跳转到登录页, 并等待用户名输入框出现 (最多等待20秒)
+        wait = WebDriverWait(driver, 20)
+        user_input = wait.until(EC.presence_of_element_located((By.ID, "username")))
+        pass_input = driver.find_element(By.ID, "password")
         
-        # --- 新增的调试步骤 ---
-        # 打印脚本看到的完整HTML, 以便我们找到正确的标签
-        logs.log_console("--- BEGIN LOGIN PAGE HTML ---", "DEBUG")
-        logs.log_console(initial_response.text, "DEBUG")
-        logs.log_console("--- END LOGIN PAGE HTML ---", "DEBUG")
-        # ------------------------
-
-        # 注意: 以下选择器是根据标准CAS登录页面的最佳猜测。
-        # 如果登录失败, 最可能的原因是这些隐藏值的HTML标签或ID发生了变化。
-        lok_value = soup.find('input', {'name': 'lok'}).get('value')
-        authChainCode_value = soup.find('input', {'name': 'authChainCode'}).get('value')
-        entityId_value = soup.find('input', {'name': 'entityId'}).get('value')
-        logs.log_console(f"Found lok: {lok_value}", "DEBUG")
-        logs.log_console(f"Found authChainCode: {authChainCode_value}", "DEBUG")
-
-        # 第2步: 获取用于加密密码的公钥
-        logs.log_console("Step 2: Fetching public key...", "DEBUG")
-        pubkey_url = "https://id.fudan.edu.cn/dp/idp/authn/getJsPublicKey"
-        pubkey_response = s.get(pubkey_url, timeout=15)
-        public_key_str = "-----BEGIN PUBLIC KEY-----\n" + pubkey_response.json()['key'] + "\n-----END PUBLIC KEY-----"
+        logs.log_console("Step 3: Entering credentials...", "INFO")
+        user_input.send_keys(username)
+        pass_input.send_keys(password)
         
-        # 第3步: 使用公钥加密密码
-        logs.log_console("Step 3: Encrypting password...", "DEBUG")
-        key = RSA.import_key(public_key_str)
-        cipher = PKCS1_v1_5.new(key)
-        encrypted_password_bytes = cipher.encrypt(password.encode('utf-8'))
-        encrypted_password_b64 = base64.b64encode(encrypted_password_bytes).decode('utf-8')
-        logs.log_console(f"Password encrypted successfully.", "DEBUG")
+        # 点击登录按钮
+        login_button = driver.find_element(By.NAME, "submit")
+        login_button.click()
 
-        # 第4步: 构造最终的Payload
-        final_payload = {
-            "authModuleCode": "userAndPwd",
-            "authChainCode": authChainCode_value,
-            "authPara": {
-                "loginName": username,
-                "password": encrypted_password_b64,
-                "verifyCode": ""
-            },
-            "entityId": entityId_value,
-            "lok": lok_value,
-            "requestType": "chain_type"
-        }
-
-        # 第5步: 发送最终的认证请求
-        logs.log_console("Step 5: Sending final authentication POST...", "DEBUG")
-        auth_url = "https://id.fudan.edu.cn/idp/authn/authExecute"
-        auth_response = s.post(auth_url, json=final_payload, timeout=15)
+        # 等待登录成功并跳转回 elife 主页 (通过检查某个元素来判断)
+        logs.log_console("Step 4: Waiting for successful login redirect...", "INFO")
+        wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), '体育项目')]"))) # 假设主页有“体育项目”字样
         
-        # 第6步 (简化处理): 检查是否登录成功
-        # 完整的流程需要处理后续的一系列跳转, 但我们可以通过检查最终的Cookie来判断
-        # 比如, elife 网站可能会设置一个名为 MOD_AUTH_CAS 的cookie
-        if "MOD_AUTH_CAS" not in s.cookies and "JSESSIONID" not in s.cookies :
-             logs.log_console(f"Login failed. Response from authExecute: {auth_response.text}", "ERROR")
-             raise Exception("Login failed, final token not found in cookies.")
+        logs.log_console("Step 5: Transferring cookies from Selenium to Requests...", "INFO")
+        # 将浏览器中的 cookie 转移到我们的 requests session 中
+        selenium_cookies = driver.get_cookies()
+        for cookie in selenium_cookies:
+            s.cookies.set(cookie['name'], cookie['value'])
+
+        # 检查关键的 cookie 是否存在
+        if "MOD_AUTH_CAS" not in s.cookies and "JSESSIONID" not in s.cookies:
+            raise Exception("Login failed, final token not found in cookies after Selenium process.")
 
         logs.log_console("Login process successful!", "INFO")
         return s
 
     except Exception as e:
-        logs.log_console(f"A critical error occurred during login: {e}", "ERROR")
+        logs.log_console(f"A critical error occurred during Selenium login: {e}", "ERROR")
+        driver.save_screenshot("error_screenshot.png") # 保存一张截图以供调试
         raise
-
+    finally:
+        driver.quit() # 确保浏览器被关闭
 
 # --- 以下函数保持不变, 仅为所有网络请求添加 timeout ---
-
+# (从 load_sports_and_campus_id 开始的所有函数都保持原样)
 def load_sports_and_campus_id(s: requests.Session, service_category_id, target_campus, target_sport):
     logs.log_console("Begin Fetching Sports and Campus ID", "INFO")
     response = s.get(search_url, params={"id": service_category_id}, timeout=15)
