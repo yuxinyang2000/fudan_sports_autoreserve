@@ -30,6 +30,8 @@ captcha_url = "https://elife.fudan.edu.cn/public/front/getImgSwipe.htm?_="
 
 # --- 全新重写的、基于 Selenium 的 login 函数 (最终版) ---
 # --- THIS IS THE CORRECTED FUNCTION ---
+# --- COPY AND REPLACE THE ENTIRE FUNCTION WITH THIS ---
+
 def login(username, password):
     logs.log_console("Step 1: Setting up Selenium WebDriver...", "INFO")
     options = webdriver.ChromeOptions()
@@ -37,7 +39,15 @@ def login(username, password):
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
-    driver = webdriver.Chrome(options=options)
+    
+    # This block automatically downloads and manages the correct chromedriver
+    try:
+        from selenium.webdriver.chrome.service import Service
+        from webdriver_manager.chrome import ChromeDriverManager
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    except ImportError:
+        logs.log_console("webdriver_manager not found, falling back to default driver. This might fail.", "WARNING")
+        driver = webdriver.Chrome(options=options)
     
     s = requests.Session()
     s.headers.update(headers)
@@ -46,45 +56,30 @@ def login(username, password):
         logs.log_console("Step 2: Navigating to the app URL...", "INFO")
         driver.get(app_url)
 
-        # --- THIS IS THE BLOCK THAT WAS LIKELY INCOMPLETE ---
-        # It needs BOTH the 'try' and the 'except'
-        try:
-            logs.log_console("Searching for a potential consent button...", "DEBUG")
-            # Wait up to 10 seconds for a button with "同意" (Agree) or "Accept"
-            consent_button = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//*[contains(text(), '同意') or contains(text(), 'Accept')]"))
-            )
-            logs.log_console("Consent button found! Clicking it...", "INFO")
-            consent_button.click()
-            time.sleep(2) # Wait a moment for the banner to disappear
-        except Exception:
-            # If the button doesn't exist, this will time out and the script will continue
-            logs.log_console("No consent button found, continuing normally.", "DEBUG")
-        # --- END OF THE BLOCK ---
-
-        # 精确等待逻辑:
-        wait = WebDriverWait(driver, 60)
-        logs.log_console("Waiting for redirect to the login page...", "DEBUG")
-        wait.until(EC.url_contains("uis.fudan.edu.cn"))
+        # --- THIS IS THE KEY CHANGE ---
+        # Instead of waiting for the URL, we wait directly for the username field.
+        # This proves the redirect happened AND the page is ready.
         
-        # 使用精确的 CSS 选择器来定位输入框 (基于 HTML 证据)
-        logs.log_console("Login page reached. Waiting for login form elements...", "DEBUG")
+        wait = WebDriverWait(driver, 60)
         user_input_selector = "input[placeholder='username']"
         pass_input_selector = "input[type='password']"
+        login_button_xpath = "//button/span[contains(text(), 'Sign in')]"
         
+        logs.log_console("Waiting for login page to load and username field to be ready...", "DEBUG")
         user_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, user_input_selector)))
+        
+        # If we are here, the page is loaded.
+        logs.log_console("Login page reached. Locating password field...", "DEBUG")
         pass_input = driver.find_element(By.CSS_SELECTOR, pass_input_selector)
         
         logs.log_console("Step 3: Entering credentials...", "INFO")
         user_input.send_keys(username)
         pass_input.send_keys(password)
         
-        # 使用精确的 XPath 来定位登录按钮 (基于 HTML 证据)
-        login_button_xpath = "//button/span[contains(text(), 'Sign in')]"
         login_button = wait.until(EC.element_to_be_clickable((By.XPATH, login_button_xpath)))
         login_button.click()
 
-        # 等待成功返回体育预约系统
+        # Wait for successful login redirect back to the app
         logs.log_console("Step 4: Waiting for successful login redirect back to the app...", "INFO")
         wait.until(EC.url_contains("/app/"))
         
