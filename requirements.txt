@@ -4,3 +4,4 @@ opencv-python
 lxml
 pycryptodome
 selenium
+webdriver-manager
