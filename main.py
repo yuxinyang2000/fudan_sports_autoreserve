@@ -55,7 +55,7 @@ else:
 TIME = "16:00"
 
 # Optional data
-EMAILS = ["22110190008@m.fudan.edu.cn"]  # Receive error notifications by email
+# EMAILS = ["22110190008@m.fudan.edu.cn"]  # Receive error notifications by email
 YOUR_EMAIL = os.environ.get('YOUR_EMAIL')  # Account to send email from
 EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')  # Password for the email account
 
