@@ -44,6 +44,21 @@ def login(username, password):
     try:
         logs.log_console("Step 2: Navigating to the app URL...", "INFO")
         driver.get(app_url)
+
+        # --- ADD THIS NEW BLOCK TO HANDLE POP-UPS ---
+    try:
+        logs.log_console("Searching for a potential consent button...", "DEBUG")
+        # Wait up to 10 seconds for a button with "同意" (Agree) or "Accept"
+        consent_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//*[contains(text(), '同意') or contains(text(), 'Accept')]"))
+        )
+        logs.log_console("Consent button found! Clicking it...", "INFO")
+        consent_button.click()
+        time.sleep(2) # Wait a moment for the banner to disappear
+    except Exception:
+        # If the button doesn't exist or isn't found after 10s, just continue
+        logs.log_console("No consent button found, continuing normally.", "DEBUG")
+    # --- END OF NEW BLOCK ---
         
         # 精确等待逻辑:
         wait = WebDriverWait(driver, 25)
