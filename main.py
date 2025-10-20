@@ -56,8 +56,8 @@ TIME = "16:00"
 
 # Optional data
 # EMAILS = ["22110190008@m.fudan.edu.cn"]  # Receive error notifications by email
-YOUR_EMAIL = os.environ.get('YOUR_EMAIL')  # Account to send email from
-EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')  # Password for the email account
+# YOUR_EMAIL = os.environ.get('YOUR_EMAIL')  # Account to send email from
+# EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')  # Password for the email account
 
 
 if __name__ == '__main__':
@@ -67,15 +67,7 @@ if __name__ == '__main__':
         service_id = apis.get_service_id(logged_in_session, SERVICE_CATEGORY, campus_id, sport_id, SPORT_LOCATION)
         apis.reserve(logged_in_session, service_id, SERVICE_CATEGORY, DATE, TIME, USER_NAME, USER_PHONE)
     except Exception as e:
-        if EMAILS:
-            import smtplib
-            import datetime
-            message = f"Subject: Failed to reserve sport field\n\n{logs.FULL_LOG}"
-            connection = smtplib.SMTP("smtp-mail.outlook.com", 587)
-            try:
-                connection.ehlo()
-                connection.starttls()
-                connection.login(YOUR_EMAIL, EMAIL_PASSWORD)
-                connection.sendmail(YOUR_EMAIL, EMAILS, message)
-            finally:
-                connection.quit()
+        # 当发生错误时，只打印日志并让程序失败退出
+        logs.log_console(f"An error occurred: {e}", "ERROR")
+        # 重新抛出异常，这样 GitHub Actions 才会正确地将任务标记为失败
+        raise
