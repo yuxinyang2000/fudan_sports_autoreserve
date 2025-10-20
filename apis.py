@@ -55,27 +55,27 @@ def login(username, password):
     try:
         logs.log_console("Step 2: Navigating to the app URL...", "INFO")
         driver.get(app_url)
-
-        # --- THIS IS THE KEY CHANGE ---
-        # Instead of waiting for the URL, we wait directly for the username field.
-        # This proves the redirect happened AND the page is ready.
         
+        # Define locators for the elements we need to interact with
         wait = WebDriverWait(driver, 60)
         user_input_selector = "input[placeholder='username']"
         pass_input_selector = "input[type='password']"
         login_button_xpath = "//button/span[contains(text(), 'Sign in')]"
         
-        logs.log_console("Waiting for login page to load and username field to be ready...", "DEBUG")
+        # --- THIS IS THE KEY CHANGE ---
+        # We now wait for EACH element to be clickable before we use it.
+        
+        logs.log_console("Waiting for username field to be ready...", "DEBUG")
         user_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, user_input_selector)))
         
-        # If we are here, the page is loaded.
-        logs.log_console("Login page reached. Locating password field...", "DEBUG")
-        pass_input = driver.find_element(By.CSS_SELECTOR, pass_input_selector)
+        logs.log_console("Waiting for password field to be ready...", "DEBUG")
+        pass_input = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, pass_input_selector)))
         
         logs.log_console("Step 3: Entering credentials...", "INFO")
         user_input.send_keys(username)
         pass_input.send_keys(password)
         
+        logs.log_console("Waiting for sign-in button to be ready...", "DEBUG")
         login_button = wait.until(EC.element_to_be_clickable((By.XPATH, login_button_xpath)))
         login_button.click()
 
