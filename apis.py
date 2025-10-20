@@ -29,6 +29,7 @@ captcha_url = "https://elife.fudan.edu.cn/public/front/getImgSwipe.htm?_="
 # -------------------------
 
 # --- 全新重写的、基于 Selenium 的 login 函数 (最终版) ---
+# --- THIS IS THE CORRECTED FUNCTION ---
 def login(username, password):
     logs.log_console("Step 1: Setting up Selenium WebDriver...", "INFO")
     options = webdriver.ChromeOptions()
@@ -45,23 +46,24 @@ def login(username, password):
         logs.log_console("Step 2: Navigating to the app URL...", "INFO")
         driver.get(app_url)
 
-        # --- ADD THIS NEW BLOCK TO HANDLE POP-UPS ---
-    try:
-        logs.log_console("Searching for a potential consent button...", "DEBUG")
-        # Wait up to 10 seconds for a button with "同意" (Agree) or "Accept"
-        consent_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//*[contains(text(), '同意') or contains(text(), 'Accept')]"))
-        )
-        logs.log_console("Consent button found! Clicking it...", "INFO")
-        consent_button.click()
-        time.sleep(2) # Wait a moment for the banner to disappear
-    except Exception:
-        # If the button doesn't exist or isn't found after 10s, just continue
-        logs.log_console("No consent button found, continuing normally.", "DEBUG")
-    # --- END OF NEW BLOCK ---
-        
+        # --- THIS IS THE BLOCK THAT WAS LIKELY INCOMPLETE ---
+        # It needs BOTH the 'try' and the 'except'
+        try:
+            logs.log_console("Searching for a potential consent button...", "DEBUG")
+            # Wait up to 10 seconds for a button with "同意" (Agree) or "Accept"
+            consent_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//*[contains(text(), '同意') or contains(text(), 'Accept')]"))
+            )
+            logs.log_console("Consent button found! Clicking it...", "INFO")
+            consent_button.click()
+            time.sleep(2) # Wait a moment for the banner to disappear
+        except Exception:
+            # If the button doesn't exist, this will time out and the script will continue
+            logs.log_console("No consent button found, continuing normally.", "DEBUG")
+        # --- END OF THE BLOCK ---
+
         # 精确等待逻辑:
-        wait = WebDriverWait(driver, 25)
+        wait = WebDriverWait(driver, 60)
         logs.log_console("Waiting for redirect to the login page...", "DEBUG")
         wait.until(EC.url_contains("uis.fudan.edu.cn"))
         
@@ -106,12 +108,6 @@ def login(username, password):
             f.write(driver.page_source)
         logs.log_console(f"Saved screenshot to {screenshot_path}", "ERROR")
         logs.log_console(f"Saved page HTML to {html_path}", "ERROR")
-
-        # ---- ADD THESE TWO LINES ----
-        print(f"[DEBUG] Stuck on page with title: '{driver.title}'")
-        print(f"[DEBUG] Stuck on page with URL: {driver.current_url}")
-        # -----------------------------
-        
         raise
     finally:
         driver.quit()
