@@ -91,6 +91,12 @@ def login(username, password):
             f.write(driver.page_source)
         logs.log_console(f"Saved screenshot to {screenshot_path}", "ERROR")
         logs.log_console(f"Saved page HTML to {html_path}", "ERROR")
+
+        # ---- ADD THESE TWO LINES ----
+        print(f"[DEBUG] Stuck on page with title: '{driver.title}'")
+        print(f"[DEBUG] Stuck on page with URL: {driver.current_url}")
+        # -----------------------------
+        
         raise
     finally:
         driver.quit()
